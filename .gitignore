@@ -59,4 +59,5 @@ coverage/
 # 其他
 *.pem
 .vercel
+.history/
 

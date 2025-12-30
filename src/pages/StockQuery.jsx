@@ -6,12 +6,12 @@ const getApiBaseUrl = () => {
     const hostname = window.location.hostname
     // 如果是localhost或127.0.0.1，使用localhost
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:3001'
+      return 'http://localhost:8887'
     }
     // 否则使用当前hostname（局域网IP）
-    return `http://${hostname}:3001`
+    return `http://${hostname}:8887`
   }
-  return 'http://localhost:3001'
+  return 'http://localhost:8887'
 }
 
 function StockQuery() {

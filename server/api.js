@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const app = express()
-const PORT = 3001
+const PORT = 8887
 
 // 数据库路径
 const dbPath = join(__dirname, '..', 'database', 'stock_data.db')

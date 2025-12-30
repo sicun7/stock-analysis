@@ -40,7 +40,7 @@ npm install
 npm run dev
 ```
 
-应用将在 `http://localhost:5173` 启动
+应用将在 `http://localhost:8888` 启动
 
 ### 构建生产版本
 
