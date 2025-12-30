@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
 import HtmlParser from './pages/HtmlParser'
 import StockQuery from './pages/StockQuery'
+import StockChart from './pages/StockChart'
 
 function Navigation() {
   const location = useLocation()
@@ -56,6 +57,22 @@ function Navigation() {
                 <div className="absolute inset-0 bg-white/20 rounded-lg animate-pulse"></div>
               )}
             </Link>
+            <Link
+              to="/chart"
+              className={`relative px-2.5 sm:px-4 rounded-lg transition-all duration-300 text-xs sm:text-sm font-semibold touch-manipulation whitespace-nowrap ${
+                location.pathname === '/chart'
+                  ? 'tech-gradient text-white shadow-lg py-1 sm:py-1.5'
+                  : 'text-gray-700 hover:text-green-600 hover:bg-white/60 active:scale-95 py-1.5 sm:py-2'
+              }`}
+            >
+              <span className="relative z-10 flex items-center gap-1 sm:gap-2">
+                <span className="text-base sm:text-lg">📈</span>
+                <span className="hidden sm:inline">股票走势</span>
+              </span>
+              {location.pathname === '/chart' && (
+                <div className="absolute inset-0 bg-white/20 rounded-lg animate-pulse"></div>
+              )}
+            </Link>
           </div>
         </div>
       </div>
@@ -66,12 +83,13 @@ function Navigation() {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen">
+      <div className="h-screen flex flex-col overflow-hidden">
         <Navigation />
-        <main className="pb-8">
+        <main className="flex-1 overflow-hidden">
           <Routes>
             <Route path="/" element={<StockQuery />} />
             <Route path="/parse" element={<HtmlParser />} />
+            <Route path="/chart" element={<StockChart />} />
           </Routes>
         </main>
       </div>
