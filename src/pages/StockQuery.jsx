@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import StockChartPopup from '../components/StockChartPopup'
 
 // 获取API基础URL
 const getApiBaseUrl = () => {
@@ -24,6 +25,12 @@ function StockQuery() {
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const firstColRef = useRef(null)
   const [firstColWidth, setFirstColWidth] = useState(100)
+  const [popupVisible, setPopupVisible] = useState(false)
+  const [popupStockCode, setPopupStockCode] = useState('')
+  const [popupPosition, setPopupPosition] = useState({ x: 0, y: 0 })
+  const popupTimerRef = useRef(null)
+  const popupCloseTimerRef = useRef(null)
+  const isMouseOverPopupRef = useRef(false)
 
   // 从数据库加载数据
   useEffect(() => {
@@ -422,6 +429,93 @@ function StockQuery() {
     }
   }
 
+  // 处理鼠标悬浮在代码列上
+  const handleCodeMouseEnter = (e, codeString) => {
+    // 清除之前的定时器
+    if (popupTimerRef.current) {
+      clearTimeout(popupTimerRef.current)
+    }
+
+    // 在异步回调之前先获取元素位置，避免事件对象失效
+    const target = e.currentTarget
+    if (!target) return
+
+    const rect = target.getBoundingClientRect()
+    const stockCode = parseCodeColumn(codeString)
+
+    // 延迟显示弹窗，避免鼠标快速移动时频繁触发
+    popupTimerRef.current = setTimeout(() => {
+      if (stockCode) {
+        // 重新获取位置，确保是最新的
+        const currentRect = target.getBoundingClientRect()
+        const x = currentRect.right + 10 // 固定在单元格右侧显示
+        const y = currentRect.top
+
+        // 弹窗大小（header 36px + 走势图 300px）
+        const popupWidth = 500
+        const popupHeight = 336
+        const viewportHeight = window.innerHeight
+
+        let finalX = x
+        let finalY = y
+
+        // 如果下方空间不够，向上调整
+        if (y + popupHeight > viewportHeight) {
+          finalY = viewportHeight - popupHeight - 10
+        }
+
+        // 确保不超出视口上边界
+        if (finalY < 10) {
+          finalY = 10
+        }
+
+        setPopupPosition({ x: finalX, y: finalY })
+        setPopupStockCode(codeString) // 传递原始代码字符串，组件内部会解析
+        setPopupVisible(true)
+      }
+    }, 300) // 300ms 延迟，避免鼠标快速移动时频繁触发
+  }
+
+  // 处理鼠标离开代码列
+  const handleCodeMouseLeave = () => {
+    // 清除定时器
+    if (popupTimerRef.current) {
+      clearTimeout(popupTimerRef.current)
+      popupTimerRef.current = null
+    }
+    // 延迟关闭弹窗，给用户时间移动到弹窗上
+    popupCloseTimerRef.current = setTimeout(() => {
+      if (!isMouseOverPopupRef.current) {
+        setPopupVisible(false)
+      }
+    }, 200)
+  }
+
+  // 处理鼠标进入弹窗
+  const handlePopupMouseEnter = () => {
+    isMouseOverPopupRef.current = true
+    // 清除关闭定时器
+    if (popupCloseTimerRef.current) {
+      clearTimeout(popupCloseTimerRef.current)
+      popupCloseTimerRef.current = null
+    }
+  }
+
+  // 处理鼠标离开弹窗
+  const handlePopupMouseLeave = () => {
+    isMouseOverPopupRef.current = false
+    // 延迟关闭弹窗
+    popupCloseTimerRef.current = setTimeout(() => {
+      setPopupVisible(false)
+    }, 200)
+  }
+
+  // 关闭弹窗
+  const handleClosePopup = () => {
+    isMouseOverPopupRef.current = false
+    setPopupVisible(false)
+  }
+
   if (loading) {
   return (
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
@@ -770,7 +864,9 @@ function StockQuery() {
                             ...textStyle
                           }}
                           onClick={canClick ? (isCodeColumn ? () => openXueqiuPageFromCode(displayValue) : () => openXueqiuPage(displayValue)) : undefined}
-                          title={canClick ? `点击查看 ${stockCode} 的雪球页面` : undefined}
+                          onMouseEnter={isCodeColumn && stockCode ? (e) => handleCodeMouseEnter(e, displayValue) : undefined}
+                          onMouseLeave={isCodeColumn && stockCode ? handleCodeMouseLeave : undefined}
+                          title={canClick ? `点击查看 ${stockCode} 的雪球页面` : (isCodeColumn && stockCode ? '鼠标悬浮查看走势图' : undefined)}
                         >
                           <span className={canClick ? 'group-hover:font-bold' : ''}>
                           {displayValue}
@@ -786,6 +882,16 @@ function StockQuery() {
           </table>
         </div>
       </div>
+
+      {/* 股票走势图弹窗 */}
+      <StockChartPopup
+        stockCode={popupStockCode}
+        isVisible={popupVisible}
+        onClose={handleClosePopup}
+        position={popupPosition}
+        onMouseEnter={handlePopupMouseEnter}
+        onMouseLeave={handlePopupMouseLeave}
+      />
     </div>
   )
 }
