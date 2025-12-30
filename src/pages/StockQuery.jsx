@@ -147,7 +147,6 @@ function StockQuery() {
 
     } catch (err) {
       setError(`加载数据失败: ${err.message}`)
-      console.error('Error loading data:', err)
     } finally {
       setLoading(false)
     }
@@ -415,11 +414,12 @@ function StockQuery() {
   }
 
   if (loading) {
-  return (
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4">
-        <div className="modern-card rounded-2xl p-12 text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-tech-blue"></div>
-          <p className="text-gray-600 mt-4">正在加载数据...</p>
+    return (
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="modern-card rounded-3xl p-16 text-center max-w-md mx-auto">
+          <div className="spinner w-16 h-16 mx-auto mb-6"></div>
+          <p className="text-gray-600 text-lg font-medium">正在加载数据...</p>
+          <p className="text-gray-400 text-sm mt-2">请稍候</p>
         </div>
       </div>
     )
@@ -427,60 +427,82 @@ function StockQuery() {
 
   if (error) {
     return (
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4">
-        <div className="modern-card rounded-2xl p-6 border-red-300">
-          <div className="text-red-600 flex items-center gap-2">
-            <span>⚠️</span>
-            <span>{error}</span>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="modern-card rounded-3xl p-8 border-2 border-red-200 bg-red-50/50 max-w-md mx-auto">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <span className="text-2xl">⚠️</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-red-800 font-bold text-lg mb-2">加载失败</h3>
+              <p className="text-red-600">{error}</p>
+            </div>
           </div>
         </div>
-            </div>
+      </div>
     )
   }
 
   if (headers.length === 0) {
     return (
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4">
-        <div className="modern-card rounded-2xl p-12 text-center">
-          <div className="text-6xl mb-4">📊</div>
-          <p className="text-gray-600">暂无数据</p>
-              </div>
-            </div>
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="modern-card rounded-3xl p-16 text-center max-w-md mx-auto">
+          <div className="text-7xl mb-6 animate-bounce">📊</div>
+          <h3 className="text-gray-700 text-xl font-bold mb-2">暂无数据</h3>
+          <p className="text-gray-500">请先导入数据或检查数据库连接</p>
+        </div>
+      </div>
     )
   }
 
+  const activeFiltersCount = Object.values(filters).filter(f => {
+    if (!f) return false
+    if (f.type === 'number') {
+      return f.operator && f.operator !== '' && (f.value !== '' || f.min !== '' || f.max !== '')
+    } else {
+      return f.operator && f.value && f.value !== ''
+    }
+  }).length
+
   return (
-    <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* 筛选条件区域 */}
-      <div className="modern-card rounded-2xl p-3 sm:p-4 mb-4 sm:mb-6">
+      <div className={`modern-card rounded-3xl shadow-xl ${
+        filtersExpanded ? 'p-5 mb-6' : 'px-4 py-3 mb-4'
+      }`}>
         <div className="flex items-center justify-between">
           <button
             onClick={() => setFiltersExpanded(!filtersExpanded)}
-            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm font-semibold text-gray-800 active:text-tech-blue transition-colors touch-manipulation"
+            className="flex items-center gap-3 text-sm font-bold text-gray-800 hover:text-blue-600 transition-all duration-200 touch-manipulation group"
           >
-            <span className="text-sm sm:text-base">{filtersExpanded ? '▼' : '▶'}</span>
-            <span>筛选条件</span>
-            <span className="hidden sm:inline text-xs text-gray-500 font-normal">
-              ({Object.values(filters).filter(f => {
-                if (!f) return false
-                if (f.type === 'number') {
-                  return f.operator && f.operator !== '' && (f.value !== '' || f.min !== '' || f.max !== '')
-                } else {
-                  return f.operator && f.value && f.value !== ''
-                }
-              }).length} 个已设置)
-            </span>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all duration-300 ${
+              filtersExpanded 
+                ? 'bg-blue-500 text-white rotate-90' 
+                : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600'
+            }`}>
+              <span className="text-sm">{filtersExpanded ? '▼' : '▶'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span>筛选条件</span>
+              {activeFiltersCount > 0 && (
+                <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
+                  {activeFiltersCount}
+                </span>
+              )}
+            </div>
           </button>
-          <button
-            onClick={clearAllFilters}
-            className="px-3 sm:px-4 py-1.5 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 rounded-lg text-xs font-medium transition-all duration-200 touch-manipulation shadow-sm"
-          >
-            清除所有
-          </button>
-          </div>
+          {activeFiltersCount > 0 && (
+            <button
+              onClick={clearAllFilters}
+              className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl text-sm font-semibold transition-all duration-200 touch-manipulation shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
+            >
+              🗑️ 清除所有
+            </button>
+          )}
+        </div>
 
         {filtersExpanded && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-4 border-t border-gray-200 filter-expand">
             {headers.map((header, index) => {
               const columnType = detectColumnType(header)
               const filter = filters[header] || {
@@ -490,19 +512,28 @@ function StockQuery() {
                 min: '',
                 max: ''
               }
+              const isActive = filter.operator && (
+                (filter.type === 'number' && (filter.value !== '' || filter.min !== '' || filter.max !== '')) ||
+                (filter.type === 'text' && filter.value !== '')
+              )
 
               return (
-                <div key={index} className="bg-white rounded-xl p-3 border border-gray-200 hover:border-tech-blue/30 transition-all shadow-sm">
-                  <label className="block text-xs font-semibold text-gray-700 mb-2">
+                <div key={index} className={`bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 border-2 transition-all duration-200 shadow-sm hover:shadow-md ${
+                  isActive 
+                    ? 'border-blue-400 bg-blue-50/50' 
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}>
+                  <label className="block text-xs font-bold text-gray-700 mb-3 flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-blue-500 animate-pulse' : 'bg-gray-300'}`}></span>
                     {getDisplayHeaderName(header)}
                   </label>
                   {columnType === 'number' ? (
-                    <div className="flex gap-1 items-center w-full">
+                    <div className="flex gap-2 items-center w-full">
                       <select
                         value={filter.operator || ''}
                         onChange={(e) => handleFilterChange(header, 'operator', e.target.value)}
-                        className="bg-white border border-gray-300 rounded-lg px-2 py-2 sm:py-1 text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-tech-blue/30 focus:border-tech-blue whitespace-nowrap flex-shrink-0 touch-manipulation transition-all"
-                        style={{ width: '70px', minHeight: '36px' }}
+                        className="modern-input bg-white border-2 border-gray-200 rounded-xl pl-3 pr-8 py-2 text-gray-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 whitespace-nowrap flex-shrink-0 touch-manipulation transition-all shadow-sm hover:shadow appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3E%3C/svg%3E')] bg-no-repeat bg-right pr-2"
+                        style={{ width: '80px', minHeight: '38px', backgroundPosition: 'right 0.5rem center' }}
                       >
                         <option value="">请选择</option>
                         <option value="equals">等于</option>
@@ -521,8 +552,8 @@ function StockQuery() {
                             placeholder="最小"
                             value={filter.min || ''}
                             onChange={(e) => handleFilterChange(header, 'min', e.target.value)}
-                            className="flex-1 bg-white border border-gray-300 rounded-lg px-2 py-2 sm:py-1 text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-tech-blue/30 focus:border-tech-blue min-w-0 touch-manipulation transition-all"
-                            style={{ minHeight: '36px' }}
+                            className="modern-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-gray-900 text-xs font-medium min-w-0 touch-manipulation"
+                            style={{ minHeight: '38px' }}
                           />
                           <input
                             type="number"
@@ -530,8 +561,8 @@ function StockQuery() {
                             placeholder="最大"
                             value={filter.max || ''}
                             onChange={(e) => handleFilterChange(header, 'max', e.target.value)}
-                            className="flex-1 bg-white border border-gray-300 rounded-lg px-2 py-2 sm:py-1 text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-tech-blue/30 focus:border-tech-blue min-w-0 touch-manipulation transition-all"
-                            style={{ minHeight: '36px' }}
+                            className="modern-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-gray-900 text-xs font-medium min-w-0 touch-manipulation"
+                            style={{ minHeight: '38px' }}
                           />
                         </>
                       ) : filter.operator && filter.operator !== '' ? (
@@ -541,20 +572,20 @@ function StockQuery() {
                           placeholder="数值"
                           value={filter.value || ''}
                           onChange={(e) => handleFilterChange(header, 'value', e.target.value)}
-                          className="flex-1 bg-white border border-gray-300 rounded-lg px-2 py-2 sm:py-1 text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-tech-blue/30 focus:border-tech-blue min-w-0 touch-manipulation transition-all"
-                          style={{ minHeight: '36px' }}
+                          className="modern-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-gray-900 text-xs font-medium min-w-0 touch-manipulation"
+                          style={{ minHeight: '38px' }}
                         />
                       ) : (
                         <div className="flex-1"></div>
                       )}
             </div>
                   ) : (
-                    <div className="flex gap-1 items-center w-full">
+                    <div className="flex gap-2 items-center w-full">
                       <select
                         value={filter.operator || 'contains'}
                         onChange={(e) => handleFilterChange(header, 'operator', e.target.value)}
-                        className="bg-white border border-gray-300 rounded-lg px-2 py-2 sm:py-1 text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-tech-blue/30 focus:border-tech-blue whitespace-nowrap flex-shrink-0 touch-manipulation transition-all"
-                        style={{ width: '70px', minHeight: '36px' }}
+                        className="modern-input bg-white border-2 border-gray-200 rounded-xl pl-3 pr-8 py-2 text-gray-900 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 whitespace-nowrap flex-shrink-0 touch-manipulation shadow-sm hover:shadow appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3E%3Cpath fill=%27none%27 stroke=%27%23343a40%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27M2 5l6 6 6-6%27/%3E%3C/svg%3E')] bg-no-repeat bg-right pr-2"
+                        style={{ width: '80px', minHeight: '38px', backgroundPosition: 'right 0.5rem center' }}
                       >
                         <option value="contains">包含</option>
                         <option value="notContains">不包含</option>
@@ -564,32 +595,38 @@ function StockQuery() {
                         placeholder="输入关键词"
                         value={filter.value || ''}
                         onChange={(e) => handleFilterChange(header, 'value', e.target.value)}
-                        className="flex-1 bg-white border border-gray-300 rounded-lg px-2 py-2 sm:py-1 text-gray-900 text-xs focus:outline-none focus:ring-2 focus:ring-tech-blue/30 focus:border-tech-blue min-w-0 touch-manipulation transition-all"
-                        style={{ minHeight: '36px' }}
+                        className="modern-input flex-1 border-2 border-gray-200 rounded-xl px-3 py-2 text-gray-900 text-xs font-medium min-w-0 touch-manipulation"
+                        style={{ minHeight: '38px' }}
                       />
             </div>
                   )}
             </div>
               )
             })}
-            </div>
-        )}
           </div>
+        )}
+      </div>
 
       {/* 数据表格 */}
-      <div className="modern-card rounded-2xl">
+      <div className="modern-card rounded-3xl shadow-xl overflow-hidden">
         {/* 数据统计栏 */}
-        <div className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-gray-200">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="text-xs sm:text-sm text-gray-700">
-              <span className="text-tech-blue font-semibold">{filteredData.length}</span>
-              <span className="text-gray-500"> / </span>
-              <span className="text-gray-500">{excelData.length}</span>
-              <span className="text-gray-500 ml-1">条数据</span>
+        <div className="px-3 sm:px-4 pt-2 sm:pt-3 pb-2 sm:pb-2.5 bg-gradient-to-r from-blue-50/50 via-purple-50/30 to-pink-50/30 border-b-2 border-gray-200">
+          <div className="flex items-center justify-between gap-2 sm:gap-3 flex-nowrap overflow-x-auto">
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+                <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-xs sm:text-sm font-bold text-gray-700 whitespace-nowrap">数据统计</span>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-700 font-semibold whitespace-nowrap">
+                <span className="text-blue-600 text-sm sm:text-base font-bold">{filteredData.length}</span>
+                <span className="text-gray-400 mx-1 sm:mx-2">/</span>
+                <span className="text-gray-600">{excelData.length}</span>
+                <span className="text-gray-500 ml-1 sm:ml-2">条</span>
+              </div>
             </div>
             {filteredData.length !== excelData.length && (
-              <div className="text-xs text-gray-600">
-                已筛选，显示 {filteredData.length} 条
+              <div className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-yellow-100 text-yellow-700 text-xs font-bold rounded-full border border-yellow-300 flex-shrink-0 whitespace-nowrap">
+                🔍 已筛选 {filteredData.length} 条
               </div>
             )}
           </div>
@@ -602,32 +639,33 @@ function StockQuery() {
             // 鼠标离开表格时，保持当前高亮，不做任何操作
           }}
         >
-          <table className="w-full min-w-full border-collapse">
+          <table className="table-modern">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
+              <tr>
                 {headers.map((header, index) => {
                   const isFixed = index < 2
                   const leftPosition = index === 0 ? 0 : (index === 1 ? firstColWidth : 0)
+                  const isSorted = sortConfig.key === header
                   return (
                     <th
                       key={index}
                       ref={index === 0 ? firstColRef : null}
                       onClick={() => handleSort(header)}
-                      className={`px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-tech-blue cursor-pointer hover:bg-gray-100 active:bg-gray-200 transition-colors whitespace-nowrap touch-manipulation ${isFixed ? 'md:sticky z-10' : ''
-                        }`}
+                      className={`px-4 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider cursor-pointer transition-all duration-200 whitespace-nowrap touch-manipulation ${
+                        isFixed ? 'md:sticky z-10 bg-gradient-to-r from-blue-50 to-purple-50' : ''
+                      } ${isSorted ? 'text-blue-600 bg-blue-50' : 'hover:bg-blue-50/50'}`}
                       style={isFixed ? {
                         left: `${leftPosition}px`,
-                        backgroundColor: '#F8FAFC',
                         zIndex: index === 0 ? 10 : 11,
-                        borderRight: index === 0 ? 'none' : undefined
-                      } : {
-                        backgroundColor: '#F8FAFC'
-                      }}
+                        borderRight: index === 0 ? '2px solid #E5E7EB' : undefined
+                      } : {}}
                     >
-                      <div className="flex items-center gap-1 sm:gap-2">
+                      <div className="flex items-center gap-2">
                         <span>{getDisplayHeaderName(header)}</span>
-                        <span className="text-xs">{getSortIcon(header)}</span>
-        </div>
+                        <span className={`text-sm transition-transform ${isSorted ? 'scale-125' : ''}`}>
+                          {getSortIcon(header)}
+                        </span>
+                      </div>
                     </th>
                   )
                 })}
@@ -636,18 +674,23 @@ function StockQuery() {
             <tbody>
               {filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan={headers.length} className="px-4 py-8 text-center text-gray-500">
-                    没有匹配的数据
+                  <td colSpan={headers.length} className="px-4 py-16 text-center">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="text-5xl">🔍</div>
+                      <p className="text-gray-500 font-medium">没有匹配的数据</p>
+                      <p className="text-gray-400 text-sm">请调整筛选条件</p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filteredData.map((row, rowIndex) => (
                   <tr
                     key={rowIndex}
-                    className={`border-b border-gray-100 transition-colors ${highlightedRow === rowIndex
-                      ? 'bg-blue-50 hover:bg-blue-100'
-                      : 'hover:bg-gray-50'
-                      }`}
+                    className={`transition-all duration-150 ${
+                      highlightedRow === rowIndex
+                        ? 'bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm'
+                        : 'hover:bg-blue-50/30'
+                    }`}
                     onMouseEnter={() => setHighlightedRow(rowIndex)}
                   >
                     {headers.map((header, colIndex) => {
@@ -672,40 +715,64 @@ function StockQuery() {
                       // 判断当前行是否高亮
                       const isHighlighted = highlightedRow === rowIndex
 
-                      // 为代码和股票列添加颜色
-                      const getTextColor = () => {
+                      // 为特定列添加颜色（使用内联样式确保优先级）
+                      const getTextStyle = () => {
+                        // T日列 - 深蓝色
+                        if (header === 'T日') {
+                          return { color: '#4338ca', fontWeight: '600' }
+                        }
+                        // 代码列 - 蓝色
                         if (isCodeColumn) {
-                          return 'text-blue-600 font-medium'
+                          return { color: '#2563eb', fontWeight: '500' }
                         }
+                        // 股票列 - 紫色
                         if (isStockColumn) {
-                          return 'text-purple-600 font-medium'
+                          return { color: '#9333ea', fontWeight: '500' }
                         }
+                        // T+1最大涨幅列 - 根据数值显示颜色：>=0红色，<0绿色
                         if (header === 'T加1最大涨幅') {
-                          // 根据数值显示颜色：0或正数显示红色，负数显示绿色
                           const numValue = Number(displayValue)
                           if (!isNaN(numValue)) {
-                            return numValue >= 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'
+                            return numValue >= 0 
+                              ? { color: '#dc2626', fontWeight: '700' } 
+                              : { color: '#16a34a', fontWeight: '700' }
                           }
-                          return 'text-red-600 font-medium' // 默认红色
+                          return { color: '#dc2626', fontWeight: '700' } // 默认红色
                         }
-                        return 'text-gray-700'
+                        // T量/T-1量列 - 橙色
+                        if (header === 'T成交量除T减1成交量') {
+                          return { color: '#ea580c', fontWeight: '600' }
+                        }
+                        // T换手率列 - 青色
+                        if (header === 'T换手率') {
+                          return { color: '#0891b2', fontWeight: '600' }
+                        }
+                        return {}
                       }
 
+                      const textStyle = getTextStyle()
+                      const fixedClass = isFixed ? 'md:sticky z-10' : ''
+                      const clickClass = canClick ? 'cursor-pointer hover:underline active:underline touch-manipulation transition-all duration-150 group' : ''
+                      
                       return (
                         <td
                           key={colIndex}
-                          className={`px-2 sm:px-3 md:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap ${getTextColor()} ${isFixed ? 'md:sticky z-10' : ''
-                            } ${canClick ? 'cursor-pointer hover:text-tech-blue hover:underline active:text-tech-blue active:underline touch-manipulation transition-colors' : ''}`}
-                          style={isFixed ? {
-                            left: `${leftPosition}px`,
-                            backgroundColor: isHighlighted ? '#DBEAFE' : '#FFFFFF', // 高亮时使用蓝色背景
-                            zIndex: colIndex === 0 ? 10 : 11,
-                            borderRight: colIndex === 0 ? 'none' : undefined
-                          } : {}}
+                          className={`px-4 py-3 text-sm whitespace-nowrap ${fixedClass} ${clickClass}`}
+                          style={{
+                            ...(isFixed ? {
+                              left: `${leftPosition}px`,
+                              backgroundColor: isHighlighted ? '#DBEAFE' : '#FFFFFF',
+                              zIndex: colIndex === 0 ? 10 : 11,
+                              borderRight: colIndex === 0 ? '2px solid #E5E7EB' : undefined
+                            } : {}),
+                            ...textStyle
+                          }}
                           onClick={canClick ? (isCodeColumn ? () => openXueqiuPageFromCode(displayValue) : () => openXueqiuPage(displayValue)) : undefined}
                           title={canClick ? `点击查看 ${stockCode} 的雪球页面` : undefined}
                         >
-                          {displayValue}
+                          <span className={canClick ? 'group-hover:font-bold transition-all' : ''}>
+                            {displayValue}
+                          </span>
                         </td>
                       )
                     })}

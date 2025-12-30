@@ -6,40 +6,55 @@ function Navigation() {
   const location = useLocation()
   
   return (
-    <nav className="modern-card border-b border-tech-blue/10 mb-2 sm:mb-3 md:mb-4 rounded-none">
-      <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6">
-        <div className="flex items-center justify-between h-12">
-          <div className="flex items-center space-x-1 sm:space-x-2">
-            <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 tech-gradient rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg">
-              <span className="text-white font-bold text-sm sm:text-base md:text-lg">📊</span>
+    <nav className="sticky top-0 z-50 glass border-b border-white/20 backdrop-blur-xl">
+      <div className="w-full px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-[60px]">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
+            <div className="relative flex-shrink-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 tech-gradient rounded-xl flex items-center justify-center shadow-lg transform hover:scale-105 transition-transform duration-300">
+                <span className="text-white font-bold text-sm sm:text-lg">📊</span>
+              </div>
+              <div className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 w-2.5 h-2.5 sm:w-3 sm:h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
             </div>
-            <h1 className="text-sm sm:text-base md:text-xl font-bold bg-gradient-to-r from-tech-blue via-tech-purple to-tech-blue bg-clip-text text-transparent whitespace-nowrap bg-[length:200%_auto] animate-gradient">
-              <span className="hidden sm:inline">掘金分析</span>
-              <span className="sm:hidden">掘金分析</span>
-            </h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent whitespace-nowrap truncate">
+                掘金分析
+              </h1>
+              <p className="text-xs text-gray-500 hidden sm:block truncate">智能股票数据分析平台</p>
+            </div>
           </div>
-          <div className="flex space-x-1.5 sm:space-x-2">
+          <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
             <Link
               to="/"
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md transition-all duration-300 text-xs sm:text-sm font-medium touch-manipulation ${
+              className={`relative px-2.5 sm:px-4 rounded-lg transition-all duration-300 text-xs sm:text-sm font-semibold touch-manipulation whitespace-nowrap ${
                 location.pathname === '/'
-                  ? 'tech-gradient text-white shadow-md'
-                  : 'text-gray-600 hover:text-tech-blue hover:bg-blue-50 active:bg-blue-100 border border-transparent hover:border-blue-200'
+                  ? 'tech-gradient text-white shadow-lg py-1 sm:py-1.5'
+                  : 'text-gray-700 hover:text-blue-600 hover:bg-white/60 active:scale-95 py-1.5 sm:py-2'
               }`}
             >
-              <span className="hidden sm:inline">数据分析</span>
-              <span className="sm:hidden">数据分析</span>
+              <span className="relative z-10 flex items-center gap-1 sm:gap-2">
+                <span className="text-base sm:text-lg">📊</span>
+                <span className="hidden sm:inline">数据分析</span>
+              </span>
+              {location.pathname === '/' && (
+                <div className="absolute inset-0 bg-white/20 rounded-lg animate-pulse"></div>
+              )}
             </Link>
             <Link
               to="/parse"
-              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md transition-all duration-300 text-xs sm:text-sm font-medium touch-manipulation ${
+              className={`relative px-2.5 sm:px-4 rounded-lg transition-all duration-300 text-xs sm:text-sm font-semibold touch-manipulation whitespace-nowrap ${
                 location.pathname === '/parse'
-                  ? 'tech-gradient text-white shadow-md'
-                  : 'text-gray-600 hover:text-tech-blue hover:bg-blue-50 active:bg-blue-100 border border-transparent hover:border-blue-200'
+                  ? 'tech-gradient text-white shadow-lg py-1 sm:py-1.5'
+                  : 'text-gray-700 hover:text-purple-600 hover:bg-white/60 active:scale-95 py-1.5 sm:py-2'
               }`}
             >
-              <span className="hidden sm:inline">数据解析</span>
-              <span className="sm:hidden">数据解析</span>
+              <span className="relative z-10 flex items-center gap-1 sm:gap-2">
+                <span className="text-base sm:text-lg">🛠️</span>
+                <span className="hidden sm:inline">数据解析</span>
+              </span>
+              {location.pathname === '/parse' && (
+                <div className="absolute inset-0 bg-white/20 rounded-lg animate-pulse"></div>
+              )}
             </Link>
           </div>
         </div>
@@ -51,12 +66,14 @@ function Navigation() {
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen">
         <Navigation />
-        <Routes>
-          <Route path="/" element={<StockQuery />} />
-          <Route path="/parse" element={<HtmlParser />} />
-        </Routes>
+        <main className="pb-8">
+          <Routes>
+            <Route path="/" element={<StockQuery />} />
+            <Route path="/parse" element={<HtmlParser />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   )

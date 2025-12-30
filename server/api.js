@@ -125,13 +125,11 @@ app.post('/api/import', async (req, res) => {
         const code = row[1]
         
         if (!date || !code) {
-          console.log(`跳过行 ${rowIndex}: 日期或代码为空`, { date, code })
           skipped++
           continue
         }
         
         if (checkExists(db, date, code)) {
-          console.log(`跳过行 ${rowIndex}: 数据已存在`, { date, code })
           skipped++
           continue
         }
@@ -176,10 +174,6 @@ app.post('/api/import', async (req, res) => {
         
         // 确保 values 长度等于 columnNames 长度
         if (values.length !== columnNames.length) {
-          console.error(`行 ${rowIndex} 参数数量不匹配: values.length=${values.length}, columnNames.length=${columnNames.length}`)
-          console.error('row length:', row.length)
-          console.error('row:', row)
-          console.error('columnNames:', columnNames)
           skipped++
           continue
         }
@@ -188,10 +182,7 @@ app.post('/api/import', async (req, res) => {
         try {
           insert.run(...values)
           inserted++
-          console.log(`成功插入行 ${rowIndex}:`, { date, code })
         } catch (err) {
-          console.error(`插入行 ${rowIndex} 失败:`, err.message)
-          console.error('values:', values)
           skipped++
         }
       }
@@ -211,7 +202,6 @@ app.post('/api/import', async (req, res) => {
     })
     
   } catch (error) {
-    console.error('入库失败:', error)
     res.status(500).json({ error: error.message })
   }
 })
@@ -249,7 +239,6 @@ app.get('/api/query', (req, res) => {
     })
     
   } catch (error) {
-    console.error('查询失败:', error)
     res.status(500).json({ error: error.message })
   }
 })

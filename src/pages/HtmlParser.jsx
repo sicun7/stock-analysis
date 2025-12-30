@@ -425,7 +425,6 @@ function HtmlParser() {
         }
       }
     } catch (err) {
-      console.error('复制失败:', err)
       setError('复制失败，请手动复制')
       setCopied(false)
     }
@@ -481,7 +480,6 @@ function HtmlParser() {
       setError('')
       
     } catch (err) {
-      console.error('入库失败:', err)
       setError(`入库失败: ${err.message}`)
       setImportResult(null)
     } finally {
@@ -490,65 +488,73 @@ function HtmlParser() {
   }
 
   return (
-    <div className="w-full px-2 sm:px-3 md:px-4 lg:px-6 py-2 sm:py-3 md:py-4">
-      <div className="space-y-6 mb-6">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
+      <div className="space-y-6">
         {/* 输入区域 */}
-        <div className="modern-card rounded-xl p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            HTML代码输入
-          </label>
+        <div className="modern-card rounded-3xl p-8 shadow-xl">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-xl">📝</span>
+            </div>
+            <div>
+              <label className="block text-lg font-bold text-gray-800">
+                HTML代码输入
+              </label>
+              <p className="text-xs text-gray-500 mt-1">粘贴包含表格的HTML代码，系统将自动解析</p>
+            </div>
+          </div>
           <textarea
             value={htmlInput}
             onChange={(e) => setHtmlInput(e.target.value)}
             placeholder="粘贴HTML表格代码..."
-            className="w-full h-32 bg-white border border-gray-300 rounded-lg p-4 text-gray-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-tech-blue focus:border-tech-blue resize-none"
+            className="modern-input w-full h-40 font-mono text-sm resize-none shadow-inner"
           />
-          <button
-            onClick={handleParse}
-            className="mt-4 w-full tech-gradient text-white py-3 rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300"
-          >
-            解析表格
-          </button>
         </div>
 
         {/* 结果显示区域 */}
-        <div className="modern-card rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <label className="block text-sm font-medium text-gray-700">
-                解析结果
-              </label>
-              {parsedData.length > 0 && (
-                <span className="text-sm font-semibold text-tech-blue bg-blue-50 px-2 py-1 rounded">
-                  {parsedData.reduce((sum, table) => sum + Math.max(0, table.data.length - 1), 0)} 条
-                </span>
-              )}
+        <div className="modern-card rounded-3xl p-8 shadow-xl">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-200">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-xl">📊</span>
+              </div>
+              <div>
+                <label className="block text-lg font-bold text-gray-800">
+                  解析结果
+                </label>
+                {parsedData.length > 0 && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                    {parsedData.reduce((sum, table) => sum + Math.max(0, table.data.length - 1), 0)} 条数据
+                  </span>
+                )}
+              </div>
             </div>
             {parsedData.length > 0 && (
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button
                   onClick={handleImport}
                   disabled={importing}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg ${
                     importing
                       ? 'bg-gray-400 text-white cursor-not-allowed'
                       : importResult
-                      ? 'bg-green-500 text-white'
-                      : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-xl'
+                      : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-xl hover:scale-105 active:scale-95'
                   }`}
                 >
                   {importing
-                    ? '入库中...'
+                    ? '⏳ 入库中...'
                     : importResult
                     ? `✓ 已入库 (${importResult.inserted}/${importResult.total})`
                     : '💾 入库'}
                 </button>
                 <button
                   onClick={handleCopy}
-                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg ${
                     copied
-                      ? 'bg-green-500 text-white'
-                      : 'tech-gradient text-white hover:shadow-lg'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                      : 'tech-gradient text-white hover:shadow-xl hover:scale-105 active:scale-95'
                   }`}
                 >
                   {copied ? '✓ 已复制' : '📋 复制'}
@@ -556,42 +562,54 @@ function HtmlParser() {
               </div>
             )}
           </div>
-          <div className="bg-gray-50 rounded-lg p-4 overflow-auto">
+          <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-6 overflow-auto border-2 border-gray-200">
             {error && (
-              <div className="text-red-600 text-sm mb-4 p-3 bg-red-50 rounded-lg border border-red-200">
-                {error}
+              <div className="mb-6 p-4 bg-red-50 rounded-xl border-2 border-red-200 shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <span className="text-red-600 text-lg">⚠️</span>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-red-800 font-bold mb-1">解析错误</h4>
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                </div>
               </div>
             )}
             {parsedData.length > 0 ? (
               <div className="space-y-6">
                 {parsedData.map((table, idx) => (
-                  <div key={idx} className="animate-slide-up">
-                    <div className="flex items-center justify-between mb-2">
+                  <div key={idx} className="animate-slide-up modern-card rounded-2xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
                       {parsedData.length > 1 && !table.isMerged && (
-                        <h3 className="text-tech-blue font-semibold">
+                        <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
+                          <span className="text-2xl">📋</span>
                           表格 {table.tableIndex}
                         </h3>
                       )}
                       {table.isMerged && (
                         <div className="flex items-center gap-2">
-                          <span className="text-tech-blue font-semibold">股票结果</span>
+                          <span className="text-2xl">✨</span>
+                          <span className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">股票结果</span>
                         </div>
                       )}
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full border-collapse">
+                    <div className="overflow-x-auto rounded-xl border-2 border-gray-200">
+                      <table className="table-modern min-w-full">
                         <tbody>
                           {table.data.map((row, rowIdx) => (
                             <tr
                               key={rowIdx}
-                              className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                              className={rowIdx === 0 ? 'bg-gradient-to-r from-blue-50 to-purple-50 font-bold' : rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}
                             >
                               {row.map((cell, cellIdx) => (
                                 <td
                                   key={cellIdx}
-                                  className={`border border-gray-200 px-4 py-2 text-sm max-w-[180px] ${
+                                  className={`px-4 py-3 text-sm max-w-[200px] ${
                                     table.isMerged && cellIdx === 0
-                                      ? 'text-tech-blue font-semibold bg-blue-50'
+                                      ? 'text-blue-600 font-bold bg-blue-50 border-r-2 border-blue-200'
+                                      : rowIdx === 0
+                                      ? 'text-gray-700 uppercase text-xs'
                                       : 'text-gray-700'
                                   }`}
                                   style={{
@@ -612,8 +630,14 @@ function HtmlParser() {
                 ))}
               </div>
             ) : (
-              <div className="text-gray-600 text-center py-20">
-                {error ? '解析失败' : '解析结果将显示在这里'}
+              <div className="text-center py-20">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="text-7xl animate-bounce">📋</div>
+                  <h3 className="text-gray-600 text-xl font-bold">
+                    {error ? '解析失败' : '解析结果将显示在这里'}
+                  </h3>
+                  <p className="text-gray-400 text-sm">在上方输入框中粘贴HTML代码并点击解析</p>
+                </div>
               </div>
             )}
           </div>
