@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 
 // 获取API基础URL
 const getApiBaseUrl = () => {
@@ -24,7 +24,6 @@ function StockQuery() {
   const [filtersExpanded, setFiltersExpanded] = useState(false)
   const firstColRef = useRef(null)
   const [firstColWidth, setFirstColWidth] = useState(100)
-  const [highlightedRow, setHighlightedRow] = useState(0)
 
   // 从数据库加载数据
   useEffect(() => {
@@ -259,34 +258,44 @@ function StockQuery() {
       }
     })
 
-    // 应用排序
+    // 应用排序 - 优化性能
     if (sortConfig.key) {
-      result.sort((a, b) => {
-        const aVal = a[sortConfig.key]
-        const bVal = b[sortConfig.key]
+      const sortKey = sortConfig.key
+      const direction = sortConfig.direction === 'asc' ? 1 : -1
+      const isDateColumn = sortKey === 'T日'
+      
+      // 预计算排序值，避免在比较函数中重复计算
+      const sorted = [...result].sort((a, b) => {
+        const aVal = a[sortKey]
+        const bVal = b[sortKey]
 
-        if (sortConfig.key === 'T日') {
-          const aDate = new Date(aVal)
-          const bDate = new Date(bVal)
-
-          if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
-            const comparison = aDate.getTime() - bDate.getTime()
-            return sortConfig.direction === 'asc' ? comparison : -comparison
+        if (isDateColumn) {
+          // 优化日期比较：只创建一次 Date 对象
+          const aTime = aVal ? new Date(aVal).getTime() : 0
+          const bTime = bVal ? new Date(bVal).getTime() : 0
+          if (!isNaN(aTime) && !isNaN(bTime)) {
+            return (aTime - bTime) * direction
           }
+          return 0
         }
 
+        // 优化数字比较
         const aNum = Number(aVal)
         const bNum = Number(bVal)
+        const aIsNum = !isNaN(aNum) && isFinite(aNum)
+        const bIsNum = !isNaN(bNum) && isFinite(bNum)
 
-        let comparison = 0
-        if (isNumeric(aVal) && isNumeric(bVal)) {
-          comparison = aNum - bNum
+        if (aIsNum && bIsNum) {
+          return (aNum - bNum) * direction
+        } else if (aIsNum) {
+          return -1 * direction
+        } else if (bIsNum) {
+          return 1 * direction
         } else {
-          comparison = String(aVal || '').localeCompare(String(bVal || ''))
+          return String(aVal || '').localeCompare(String(bVal || '')) * direction
         }
-
-        return sortConfig.direction === 'asc' ? comparison : -comparison
       })
+      return sorted
     }
 
     return result
@@ -311,8 +320,8 @@ function StockQuery() {
     }))
   }
 
-  // 处理排序
-  const handleSort = (columnName) => {
+  // 处理排序 - 使用 useCallback 优化
+  const handleSort = useCallback((columnName) => {
     setSortConfig(prev => {
       if (prev.key === columnName) {
         return {
@@ -326,7 +335,7 @@ function StockQuery() {
         }
       }
     })
-  }
+  }, [])
 
   // 清除所有筛选
   const clearAllFilters = () => {
@@ -414,7 +423,7 @@ function StockQuery() {
   }
 
   if (loading) {
-    return (
+  return (
       <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="modern-card rounded-3xl p-16 text-center max-w-md mx-auto">
           <div className="spinner w-16 h-16 mx-auto mb-6"></div>
@@ -439,7 +448,7 @@ function StockQuery() {
             </div>
           </div>
         </div>
-      </div>
+            </div>
     )
   }
 
@@ -450,8 +459,8 @@ function StockQuery() {
           <div className="text-7xl mb-6 animate-bounce">📊</div>
           <h3 className="text-gray-700 text-xl font-bold mb-2">暂无数据</h3>
           <p className="text-gray-500">请先导入数据或检查数据库连接</p>
-        </div>
-      </div>
+              </div>
+            </div>
     )
   }
 
@@ -483,23 +492,23 @@ function StockQuery() {
               <span className="text-sm">{filtersExpanded ? '▼' : '▶'}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span>筛选条件</span>
+            <span>过滤条件</span>
               {activeFiltersCount > 0 && (
                 <span className="px-2 py-0.5 bg-blue-500 text-white text-xs font-bold rounded-full">
                   {activeFiltersCount}
-                </span>
+            </span>
               )}
             </div>
           </button>
           {activeFiltersCount > 0 && (
-            <button
-              onClick={clearAllFilters}
+          <button
+            onClick={clearAllFilters}
               className="px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-xl text-sm font-semibold transition-all duration-200 touch-manipulation shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
-            >
+          >
               🗑️ 清除所有
-            </button>
+          </button>
           )}
-        </div>
+          </div>
 
         {filtersExpanded && (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 pt-4 border-t border-gray-200 filter-expand">
@@ -603,9 +612,9 @@ function StockQuery() {
             </div>
               )
             })}
-          </div>
+            </div>
         )}
-      </div>
+          </div>
 
       {/* 数据表格 */}
       <div className="modern-card rounded-3xl shadow-xl overflow-hidden">
@@ -635,11 +644,9 @@ function StockQuery() {
         {/* 表格容器 */}
         <div
           className="overflow-x-auto"
-          onMouseLeave={() => {
-            // 鼠标离开表格时，保持当前高亮，不做任何操作
-          }}
+          style={{ willChange: 'scroll-position' }}
         >
-          <table className="table-modern">
+          <table className="table-modern" style={{ willChange: 'transform' }}>
             <thead>
               <tr>
                 {headers.map((header, index) => {
@@ -656,8 +663,10 @@ function StockQuery() {
                       } ${isSorted ? 'text-blue-600 bg-blue-50' : 'hover:bg-blue-50/50'}`}
                       style={isFixed ? {
                         left: `${leftPosition}px`,
-                        zIndex: index === 0 ? 10 : 11,
-                        borderRight: index === 0 ? '2px solid #E5E7EB' : undefined
+                        zIndex: index === 0 ? 50 : 51,
+                        borderRight: index === 1 ? '2px solid #E5E7EB' : 'none',
+                        backgroundColor: '#F8FAFC',
+                        boxShadow: index === 1 ? '2px 0 0 0 #E5E7EB' : 'none'
                       } : {}}
                     >
                       <div className="flex items-center gap-2">
@@ -665,7 +674,7 @@ function StockQuery() {
                         <span className={`text-sm transition-transform ${isSorted ? 'scale-125' : ''}`}>
                           {getSortIcon(header)}
                         </span>
-                      </div>
+        </div>
                     </th>
                   )
                 })}
@@ -683,15 +692,11 @@ function StockQuery() {
                   </td>
                 </tr>
               ) : (
-                filteredData.map((row, rowIndex) => (
+                filteredData.map((row, rowIndex) => {
+                  return (
                   <tr
                     key={rowIndex}
-                    className={`transition-all duration-150 ${
-                      highlightedRow === rowIndex
-                        ? 'bg-gradient-to-r from-blue-50 to-purple-50 shadow-sm'
-                        : 'hover:bg-blue-50/30'
-                    }`}
-                    onMouseEnter={() => setHighlightedRow(rowIndex)}
+                    className="group"
                   >
                     {headers.map((header, colIndex) => {
                       const isFixed = colIndex < 2
@@ -711,9 +716,6 @@ function StockQuery() {
                       const isCodeColumn = header === '代码'
                       const stockCode = isStockColumn ? parseStockCode(displayValue) : (isCodeColumn ? parseCodeColumn(displayValue) : null)
                       const canClick = (isStockColumn && stockCode !== null) || (isCodeColumn && stockCode !== null)
-
-                      // 判断当前行是否高亮
-                      const isHighlighted = highlightedRow === rowIndex
 
                       // 为特定列添加颜色（使用内联样式确保优先级）
                       const getTextStyle = () => {
@@ -752,32 +754,33 @@ function StockQuery() {
 
                       const textStyle = getTextStyle()
                       const fixedClass = isFixed ? 'md:sticky z-10' : ''
-                      const clickClass = canClick ? 'cursor-pointer hover:underline active:underline touch-manipulation transition-all duration-150 group' : ''
-                      
+                      const clickClass = canClick ? 'cursor-pointer hover:underline active:underline touch-manipulation group' : ''
+
                       return (
                         <td
                           key={colIndex}
-                          className={`px-4 py-3 text-sm whitespace-nowrap ${fixedClass} ${clickClass}`}
+                          className={`px-4 py-3 text-sm whitespace-nowrap ${fixedClass} ${clickClass} ${isFixed ? 'bg-white group-hover:bg-blue-100' : 'group-hover:bg-blue-100'}`}
                           style={{
                             ...(isFixed ? {
-                              left: `${leftPosition}px`,
-                              backgroundColor: isHighlighted ? '#DBEAFE' : '#FFFFFF',
-                              zIndex: colIndex === 0 ? 10 : 11,
-                              borderRight: colIndex === 0 ? '2px solid #E5E7EB' : undefined
+                            left: `${leftPosition}px`,
+                              zIndex: colIndex === 0 ? 50 : 51,
+                              borderRight: colIndex === 1 ? '2px solid #E5E7EB' : 'none',
+                              boxShadow: colIndex === 1 ? '2px 0 0 0 #E5E7EB' : 'none'
                             } : {}),
                             ...textStyle
                           }}
                           onClick={canClick ? (isCodeColumn ? () => openXueqiuPageFromCode(displayValue) : () => openXueqiuPage(displayValue)) : undefined}
                           title={canClick ? `点击查看 ${stockCode} 的雪球页面` : undefined}
                         >
-                          <span className={canClick ? 'group-hover:font-bold transition-all' : ''}>
-                            {displayValue}
+                          <span className={canClick ? 'group-hover:font-bold' : ''}>
+                          {displayValue}
                           </span>
                         </td>
                       )
                     })}
                   </tr>
-                ))
+                  )
+                })
               )}
             </tbody>
           </table>

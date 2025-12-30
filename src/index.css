@@ -156,7 +156,7 @@
   }
   
   .table-modern tbody tr {
-    @apply border-b border-gray-100 transition-colors duration-150;
+    @apply border-b border-gray-100;
   }
   
   .table-modern tbody tr:hover {

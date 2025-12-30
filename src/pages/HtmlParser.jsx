@@ -512,35 +512,35 @@ function HtmlParser() {
         </div>
 
         {/* 结果显示区域 */}
-        <div className="modern-card rounded-3xl p-8 shadow-xl">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b-2 border-gray-200">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-white text-xl">📊</span>
+        <div className="modern-card rounded-3xl p-5 sm:p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg">
+                <span className="text-white text-base sm:text-xl">📊</span>
               </div>
               <div>
-                <label className="block text-lg font-bold text-gray-800">
+                <label className="block text-base sm:text-lg font-bold text-gray-800">
                   解析结果
                 </label>
                 {parsedData.length > 0 && (
-                  <span className="inline-flex items-center gap-1 mt-1 text-sm font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-                    <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                  <span className="inline-flex items-center gap-1 mt-1 text-xs sm:text-sm font-bold text-blue-600 bg-blue-50 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full border border-blue-200">
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full animate-pulse"></span>
                     {parsedData.reduce((sum, table) => sum + Math.max(0, table.data.length - 1), 0)} 条数据
                   </span>
                 )}
               </div>
             </div>
             {parsedData.length > 0 && (
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
                   onClick={handleImport}
                   disabled={importing}
-                  className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg ${
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 shadow-md ${
                     importing
                       ? 'bg-gray-400 text-white cursor-not-allowed'
                       : importResult
-                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-xl'
-                      : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-xl hover:scale-105 active:scale-95'
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:shadow-lg'
+                      : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white hover:shadow-lg hover:scale-105 active:scale-95'
                   }`}
                 >
                   {importing
@@ -551,10 +551,10 @@ function HtmlParser() {
                 </button>
                 <button
                   onClick={handleCopy}
-                  className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 shadow-lg ${
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-300 shadow-md ${
                     copied
                       ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
-                      : 'tech-gradient text-white hover:shadow-xl hover:scale-105 active:scale-95'
+                      : 'tech-gradient text-white hover:shadow-lg hover:scale-105 active:scale-95'
                   }`}
                 >
                   {copied ? '✓ 已复制' : '📋 复制'}
@@ -562,9 +562,9 @@ function HtmlParser() {
               </div>
             )}
           </div>
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-6 overflow-auto border-2 border-gray-200">
+          <div className="bg-gradient-to-br from-gray-50 to-blue-50/30 rounded-2xl p-4 sm:p-6 overflow-auto space-y-4 sm:space-y-6">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 rounded-xl border-2 border-red-200 shadow-sm">
+              <div className="p-4 bg-red-50 rounded-xl border-2 border-red-200 shadow-sm">
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
                     <span className="text-red-600 text-lg">⚠️</span>
@@ -577,10 +577,9 @@ function HtmlParser() {
               </div>
             )}
             {parsedData.length > 0 ? (
-              <div className="space-y-6">
-                {parsedData.map((table, idx) => (
-                  <div key={idx} className="animate-slide-up modern-card rounded-2xl p-6 shadow-lg">
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
+              parsedData.map((table, idx) => (
+                <div key={idx} className="animate-slide-up modern-card rounded-2xl px-3 pt-2 pb-3 sm:px-4 sm:pt-3 sm:pb-4 shadow-lg">
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
                       {parsedData.length > 1 && !table.isMerged && (
                         <h3 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent flex items-center gap-2">
                           <span className="text-2xl">📋</span>
@@ -594,8 +593,8 @@ function HtmlParser() {
                         </div>
                       )}
                     </div>
-                    <div className="overflow-x-auto rounded-xl border-2 border-gray-200">
-                      <table className="table-modern min-w-full">
+                    <div className="overflow-x-auto rounded-xl">
+                      <table className="table-modern min-w-full border border-gray-200">
                         <tbody>
                           {table.data.map((row, rowIdx) => (
                             <tr
@@ -627,8 +626,7 @@ function HtmlParser() {
                       </table>
                     </div>
                   </div>
-                ))}
-              </div>
+                ))
             ) : (
               <div className="text-center py-20">
                 <div className="flex flex-col items-center gap-4">
