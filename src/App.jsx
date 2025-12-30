@@ -83,9 +83,9 @@ function Navigation() {
 function App() {
   return (
     <Router>
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="min-h-screen">
         <Navigation />
-        <main className="flex-1 overflow-hidden">
+        <main className="pb-8">
           <Routes>
             <Route path="/" element={<StockQuery />} />
             <Route path="/parse" element={<HtmlParser />} />
