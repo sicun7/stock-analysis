@@ -12,6 +12,7 @@
     "init-db": "node server/database/init.data.js",
     "view-db": "node server/database/view.data.js",
     "clear-db": "node server/database/clear.data.js",
+    "init-cloud-db": "node server/database/init_cloud_db.js",
     "api": "node server/api.js"
   },
   "dependencies": {
@@ -21,7 +22,8 @@
     "xlsx": "^0.18.5",
     "express": "^4.18.2",
     "cors": "^2.8.5",
-    "klinecharts": "^10.0.0-beta1"
+    "klinecharts": "^10.0.0-beta1",
+    "@libsql/client": "^0.14.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

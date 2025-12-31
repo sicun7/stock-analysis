@@ -1,10 +1,11 @@
 import express from 'express'
 import cors from 'cors'
-import Database from 'better-sqlite3'
+import { createClient } from '@libsql/client'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import https from 'https'
 import http from 'http'
+import { DB_ACCESS_CONFIG } from '../shared/constants.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -14,8 +15,51 @@ const app = express()
 // 用户只需访问 8888，开发环境通过 Vite 代理访问后端
 const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8888 : 8887)
 
-// 数据库路径
-const dbPath = join(__dirname, 'database', 'stock_data.db')
+// 连接 Turso 云数据库
+const db = createClient({
+  url: DB_ACCESS_CONFIG.url,
+  authToken: DB_ACCESS_CONFIG.token
+})
+
+// 已知的列名（从 init.data.js 中获取）
+const columnNames = [
+  'T日',
+  '代码',
+  '股票',
+  '现价_元',
+  'T减1收盘价',
+  'T减2的MA5',
+  'T减2的MA10',
+  'T减2的MA20',
+  'T减1的MA5',
+  'T减1的MA10',
+  'T减1的MA20',
+  'T的MA5',
+  'T的MA10',
+  'T的MA20',
+  'T减1收盘价减MA5',
+  'T减1涨幅',
+  'T涨幅',
+  'T最低价',
+  'T最低价减MA5',
+  'T减2成交量_股',
+  'T减1成交量_股',
+  'T成交量_股',
+  '涨跌幅',
+  'T减2的MA5减MA10',
+  'T减1的MA5减MA10',
+  'T的MA5减MA10',
+  'T减2的MA10减MA20',
+  'T减1的MA10减MA20',
+  'T的MA10减MA20',
+  'T减1开盘价',
+  'T减1开盘价减MA5',
+  'T减1成交量除T减2成交量',
+  'T换手率',
+  'T振幅',
+  'T加1最大涨幅',
+  'T成交量除T减1成交量'
+]
 
 // 中间件
 app.use(cors())
@@ -67,10 +111,12 @@ function calculateVolumeRatio(tVolume, t1Volume) {
 
 // 检查数据是否存在（根据 T日 和 代码）
 // 注意：字段名已经改为新名称，但T日和代码字段名保持不变
-function checkExists(db, date, code) {
-  const stmt = db.prepare('SELECT COUNT(*) as count FROM stock_data WHERE "T日" = ? AND "代码" = ?')
-  const result = stmt.get(date, code)
-  return result.count > 0
+async function checkExists(date, code) {
+  const result = await db.execute({
+    sql: 'SELECT COUNT(*) as count FROM stock_data WHERE "T日" = ? AND "代码" = ?',
+    args: [date, code]
+  })
+  return result.rows[0].count > 0
 }
 
 // 入库接口
@@ -82,126 +128,114 @@ app.post('/api/import', async (req, res) => {
       return res.status(400).json({ error: '数据格式错误' })
     }
     
-    // 连接数据库
-    const db = new Database(dbPath)
-    
-    // 获取表结构，确定字段顺序
-    const tableInfo = db.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='stock_data'").get()
-    if (!tableInfo) {
-      db.close()
-      return res.status(500).json({ error: '数据库表不存在' })
-    }
-    
-    // 获取所有列名（排除 id）
-    const columns = db.prepare("PRAGMA table_info(stock_data)").all()
-    const columnNames = columns
-      .filter(col => col.name !== 'id')
-      .map(col => col.name)
-    
     // 准备插入语句（排除 id，id 是自增的）
     const placeholders = columnNames.map(() => '?').join(', ')
     const insertSQL = `INSERT INTO stock_data (${columnNames.map(name => `"${name}"`).join(', ')}) VALUES (${placeholders})`
-    const insert = db.prepare(insertSQL)
     
     // 批量插入
-    const insertMany = db.transaction((rows) => {
-      let inserted = 0
-      let skipped = 0
+    let inserted = 0
+    let skipped = 0
+    
+    if (data.length === 0) {
+      return res.json({
+        success: true,
+        inserted: 0,
+        skipped: 0,
+        total: 0
+      })
+    }
+    
+    // 处理每一行数据
+    // 前端传的数据行有35个字段（索引0-34），对应数据库的前35个字段（索引0-34）
+    // 数据库第36个字段（索引35）需要计算：row[22] / row[21]
+    const dividendIndex = 21  // 第22项（从1开始计数），索引21（从0开始计数）
+    const divisorIndex = 20    // 第21项（从1开始计数），索引20（从0开始计数）
+    
+    // 准备批量插入的语句
+    const statements = []
+    
+    for (let rowIndex = 0; rowIndex < data.length; rowIndex++) {
+      const row = data[rowIndex]
       
-      if (rows.length === 0) {
-        return { inserted: 0, skipped: 0 }
+      // 检查是否存在（根据 T日 和 代码）
+      // T日是第1个字段（索引0），代码是第2个字段（索引1）
+      const date = row[0]
+      const code = row[1]
+      
+      if (!date || !code) {
+        skipped++
+        continue
       }
       
-      // 处理每一行数据
-      // 前端传的数据行有35个字段（索引0-34），对应数据库的前35个字段（索引0-34）
-      // 数据库第36个字段（索引35）需要计算：row[22] / row[21]
-      // 注意：row[21]是第22项（从1开始计数），row[20]是第21项（从1开始计数）
-      // 但用户说"第22项除以第21项"，应该是指索引21除以索引20
-      const dividendIndex = 21  // 第22项（从1开始计数），索引21（从0开始计数）
-      const divisorIndex = 20    // 第21项（从1开始计数），索引20（从0开始计数）
+      // 检查是否已存在
+      if (await checkExists(date, code)) {
+        skipped++
+        continue
+      }
       
-      for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-        const row = rows[rowIndex]
+      // 构建插入值数组，按照数据库字段顺序
+      const values = []
+      
+      // 前35个字段：直接按顺序对应（row[0] 到 row[34] 对应数据库字段索引 0-34）
+      for (let i = 0; i < 35 && i < row.length; i++) {
+        let value = row[i]
         
-        // 检查是否存在（根据 T日 和 代码）
-        // T日是第1个字段（索引0），代码是第2个字段（索引1）
-        const date = row[0]
-        const code = row[1]
-        
-        if (!date || !code) {
-          skipped++
-          continue
-        }
-        
-        if (checkExists(db, date, code)) {
-          skipped++
-          continue
-        }
-        
-        // 构建插入值数组，按照数据库字段顺序
-        const values = []
-        
-        // 前35个字段：直接按顺序对应（row[0] 到 row[34] 对应数据库字段索引 0-34）
-        for (let i = 0; i < 35 && i < row.length; i++) {
-          let value = row[i]
-          
-          // 处理空值
-          if (value === null || value === undefined || value === '') {
-            values.push(null)
+        // 处理空值
+        if (value === null || value === undefined || value === '') {
+          values.push(null)
+        } else {
+          // T日（索引0）和代码（索引1）必须保持为字符串
+          if (i === 0 || i === 1) {
+            values.push(String(value))
           } else {
-            // T日（索引0）和代码（索引1）必须保持为字符串
-            if (i === 0 || i === 1) {
-              values.push(String(value))
+            // 其他字段：尝试转换为数字（如果是数字列）
+            const num = parseFloat(value)
+            if (!isNaN(num) && isFinite(num)) {
+              values.push(num)
             } else {
-              // 其他字段：尝试转换为数字（如果是数字列）
-              const num = parseFloat(value)
-              if (!isNaN(num) && isFinite(num)) {
-                values.push(num)
-              } else {
-                values.push(String(value))
-              }
+              values.push(String(value))
             }
           }
         }
-        
-        // 如果row只有35个字段，但我们需要36个字段，补齐到35个
-        while (values.length < 35) {
-          values.push(null)
-        }
-        
-        // 第36个字段：计算 row[22] / row[21]（即索引21除以索引20）
-        const dividend = dividendIndex < row.length ? row[dividendIndex] : null  // 第22项（索引21）
-        const divisor = divisorIndex < row.length ? row[divisorIndex] : null       // 第21项（索引20）
-        
-        const volumeRatio = calculateVolumeRatio(dividend, divisor)
-        values.push(volumeRatio)
-        
-        // 确保 values 长度等于 columnNames 长度
-        if (values.length !== columnNames.length) {
-          skipped++
-          continue
-        }
-        
-        // 插入数据
-        try {
-          insert.run(...values)
-          inserted++
-        } catch (err) {
-          skipped++
-        }
       }
       
-      return { inserted, skipped }
-    })
+      // 如果row只有35个字段，但我们需要36个字段，补齐到35个
+      while (values.length < 35) {
+        values.push(null)
+      }
+      
+      // 第36个字段：计算 row[22] / row[21]（即索引21除以索引20）
+      const dividend = dividendIndex < row.length ? row[dividendIndex] : null  // 第22项（索引21）
+      const divisor = divisorIndex < row.length ? row[divisorIndex] : null       // 第21项（索引20）
+      
+      const volumeRatio = calculateVolumeRatio(dividend, divisor)
+      values.push(volumeRatio)
+      
+      // 确保 values 长度等于 columnNames 长度
+      if (values.length !== columnNames.length) {
+        skipped++
+        continue
+      }
+      
+      // 添加到批量插入列表
+      statements.push({
+        sql: insertSQL,
+        args: values
+      })
+    }
     
-    const result = insertMany(data)
-    
-    db.close()
+    // 批量执行插入（每批50条）
+    const batchSize = 50
+    for (let i = 0; i < statements.length; i += batchSize) {
+      const batch = statements.slice(i, i + batchSize)
+      await db.batch(batch)
+      inserted += batch.length
+    }
     
     res.json({
       success: true,
-      inserted: result.inserted,
-      skipped: result.skipped,
+      inserted: inserted,
+      skipped: skipped,
       total: data.length
     })
     
@@ -211,30 +245,20 @@ app.post('/api/import', async (req, res) => {
 })
 
 // 查询数据接口
-app.get('/api/query', (req, res) => {
+app.get('/api/query', async (req, res) => {
   try {
-    // 连接数据库
-    const db = new Database(dbPath)
-    
     // 获取所有数据
-    const rows = db.prepare('SELECT * FROM stock_data ORDER BY id').all()
-    
-    // 获取表结构，确定列名
-    const columns = db.prepare("PRAGMA table_info(stock_data)").all()
-    const columnNames = columns
-      .filter(col => col.name !== 'id')
-      .map(col => col.name)
+    const result = await db.execute('SELECT * FROM stock_data ORDER BY id')
+    const rows = result.rows
     
     // 转换数据格式：将行数据转换为对象格式，使用列名作为键
     const data = rows.map(row => {
       const rowObj = {}
-      columnNames.forEach((colName, index) => {
-        rowObj[colName] = row[colName] !== null ? row[colName] : ''
+      columnNames.forEach((colName) => {
+        rowObj[colName] = row[colName] !== null && row[colName] !== undefined ? row[colName] : ''
       })
       return rowObj
     })
-    
-    db.close()
     
     res.json({
       success: true,
