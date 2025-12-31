@@ -10,7 +10,7 @@ const __dirname = dirname(__filename)
 
 // 数据库和 Excel 文件路径
 const dbPath = join(__dirname, 'stock_data.db')
-const excelPath = join(__dirname, '..', 'public', 'stock_data.xlsx')
+const excelPath = join(__dirname, '..', '..', 'public', 'stock_data.xlsx')
 
 // Excel 日期序列号转换为日期字符串
 function excelDateToDateString(excelDate) {

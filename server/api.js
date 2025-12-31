@@ -13,7 +13,7 @@ const app = express()
 const PORT = 8887
 
 // 数据库路径
-const dbPath = join(__dirname, '..', 'database', 'stock_data.db')
+const dbPath = join(__dirname, 'database', 'stock_data.db')
 
 // 中间件
 app.use(cors())

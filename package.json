@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:api": "node server/api.js",
+    "dev:all": "concurrently \"npm run dev\" \"npm run dev:api\"",
     "build": "vite build",
     "preview": "vite preview",
-    "init-db": "node database/init.data.js",
-    "view-db": "node database/view.data.js",
-    "clear-db": "node database/clear.data.js",
+    "init-db": "node server/database/init.data.js",
+    "view-db": "node server/database/view.data.js",
+    "clear-db": "node server/database/clear.data.js",
     "api": "node server/api.js"
   },
   "dependencies": {
@@ -27,6 +29,7 @@
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.16",
     "better-sqlite3": "^11.0.0",
+    "concurrently": "^8.2.2",
     "postcss": "^8.4.32",
     "tailwindcss": "^3.3.6",
     "vite": "^5.0.8"
