@@ -1,17 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { init, dispose } from "klinecharts";
-
-// 获取API基础URL
-const getApiBaseUrl = () => {
-  if (typeof window !== "undefined") {
-    const hostname = window.location.hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      return "http://localhost:8887";
-    }
-    return `http://${hostname}:8887`;
-  }
-  return "http://localhost:8887";
-};
+import { getApiBaseUrl } from "../utils/api";
 
 function StockChartPopup({ stockCode, isVisible, onClose, position, onMouseEnter, onMouseLeave }) {
   const [chartType, setChartType] = useState("day"); // day, minute
