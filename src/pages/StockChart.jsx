@@ -305,8 +305,8 @@ function StockChart() {
   };
 
   return (
-    <div className="w-full h-[calc(100vh-60px)] flex flex-col px-4 sm:px-6 lg:px-8 py-4">
-      <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0">
+    <div className="w-full h-[calc(100vh-48px)] flex flex-col px-4 sm:px-6 lg:px-8 overflow-hidden">
+      <div className="max-w-7xl mx-auto w-full flex flex-col flex-1 min-h-0 py-3">
         <div className="modern-card rounded-2xl p-3 sm:p-4 shadow-lg mb-3 flex-shrink-0">
           <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-3">
             股票走势
@@ -365,7 +365,7 @@ function StockChart() {
         </div>
 
         {/* 图表容器 */}
-        <div className="modern-card rounded-2xl p-3 sm:p-4 shadow-lg flex-1 min-h-0 flex flex-col">
+        <div className="modern-card rounded-2xl p-3 sm:p-4 shadow-lg flex-1 min-h-0 flex flex-col overflow-hidden">
           <div
             ref={chartContainerRef}
             className="w-full flex-1"

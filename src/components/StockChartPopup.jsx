@@ -184,6 +184,17 @@ function StockChartPopup({ stockCode, isVisible, onClose, position, onMouseEnter
     };
   }, [isVisible]);
 
+  // 当弹窗关闭时，清空所有 ref，避免下次打开时检查失败
+  useEffect(() => {
+    if (!isVisible) {
+      lastCodeRef.current = "";
+      lastPeriodRef.current = "";
+      lastTypeRef.current = "";
+      currentCodeRef.current = "";
+      currentTypeRef.current = "day";
+    }
+  }, [isVisible]);
+
   // 获取K线数据
   const fetchKLineData = async (code, type) => {
     // 如果图表还没初始化，等待一下
@@ -281,6 +292,11 @@ function StockChartPopup({ stockCode, isVisible, onClose, position, onMouseEnter
     if (isVisible && stockCode && chartRef.current) {
       const formattedCode = formatStockCode(stockCode);
       if (formattedCode) {
+        const displayCode = formattedCode.toUpperCase();
+        // 如果股票代码变化了，先清空 lastCodeRef，确保能正常加载
+        if (lastCodeRef.current && lastCodeRef.current !== displayCode) {
+          lastCodeRef.current = "";
+        }
         // 延迟一下，确保图表完全初始化
         const timer = setTimeout(() => {
           fetchKLineData(stockCode, chartType);
