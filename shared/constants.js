@@ -9,7 +9,7 @@ export const API_ENDPOINTS = {
 
 // 默认配置
 export const DEFAULT_CONFIG = {
-  API_PORT: 8887,
-  API_BASE_URL: 'http://localhost:8887'
+  API_PORT: 8888,
+  API_BASE_URL: 'http://localhost:8888'
 }
 

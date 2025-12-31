@@ -10,7 +10,9 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const app = express()
-const PORT = 8887
+// 开发环境使用 8887（避免与前端 Vite 8888 冲突），生产环境使用 8888
+// 用户只需访问 8888，开发环境通过 Vite 代理访问后端
+const PORT = process.env.PORT || (process.env.NODE_ENV === 'production' ? 8888 : 8887)
 
 // 数据库路径
 const dbPath = join(__dirname, 'database', 'stock_data.db')
@@ -437,8 +439,28 @@ function aggregateKLineData(data, type) {
   return aggregated
 }
 
+// 生产环境：服务静态文件（前端构建产物）
+if (process.env.NODE_ENV === 'production') {
+  const distPath = join(__dirname, '..', 'dist')
+  
+  // 服务静态文件
+  app.use(express.static(distPath))
+  
+  // SPA 路由回退：所有非 API 请求返回 index.html
+  app.get('*', (req, res, next) => {
+    // 如果是 API 请求，跳过
+    if (req.path.startsWith('/api')) {
+      return next()
+    }
+    res.sendFile(join(distPath, 'index.html'))
+  })
+}
+
 // 启动服务器
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API 服务器运行在 http://localhost:${PORT}`)
+  console.log(`服务器运行在 http://localhost:${PORT}`)
+  if (process.env.NODE_ENV === 'production') {
+    console.log('生产模式：已启用静态文件服务')
+  }
 })
 

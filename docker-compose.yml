@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  stock-app:
+    build: .
+    container_name: stock-analysis
+    ports:
+      - "8888:8888"
+    volumes:
+      # 持久化数据库
+      - ./server/database:/app/server/database
+      # 持久化日志
+      - ./logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=8888
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8888/api/query', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+

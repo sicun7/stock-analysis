@@ -1,7 +1,7 @@
 // 服务器配置文件
 
 export const SERVER_CONFIG = {
-  port: 8887,
+  port: process.env.PORT || 8888,
   cors: {
     origin: '*', // 生产环境应该设置具体的域名
     credentials: true
